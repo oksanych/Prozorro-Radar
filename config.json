@@ -16,7 +16,7 @@
   "signals": {
     "S1_VALUE_THRESHOLD": 500000,
     "S2_DEADLINE_THRESHOLDS": {
-      "belowThreshold": 7,
+      "belowThreshold": 3,
       "aboveThresholdUA": 15,
       "aboveThresholdEU": 30
     },
