@@ -1,6 +1,7 @@
 import db from '@/lib/db';
 import NewCaseDialog from '@/app/components/cases/NewCaseDialog';
 import CaseCard from '@/app/components/cases/CaseCard';
+import EmptyState from '@/app/components/shared/EmptyState';
 import type { CaseRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -23,11 +24,13 @@ export default function CasesPage() {
       </div>
 
       {cases.length === 0 ? (
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-12 text-center">
-          <div className="text-4xl mb-3">📁</div>
-          <div className="text-slate-300 font-medium mb-1">No case files yet</div>
-          <div className="text-sm text-slate-500">Create a case to collect tenders and entities for investigation.</div>
-        </div>
+        <EmptyState
+          icon="📁"
+          title="No cases yet"
+          description="Start investigating by adding tenders from the Feed."
+          actionLabel="Go to Feed →"
+          actionHref="/feed"
+        />
       ) : (
         <div className="space-y-3">
           {cases.map(c => <CaseCard key={c.id} case_={c} />)}

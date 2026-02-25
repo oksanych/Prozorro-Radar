@@ -5,6 +5,7 @@ import FilterBar from '../components/feed/FilterBar';
 import TenderCard from '../components/feed/TenderCard';
 import ShareButton from '../components/feed/ShareButton';
 import Pagination from '../components/feed/Pagination';
+import EmptyState from '../components/shared/EmptyState';
 import type { TenderRow, SignalRow, TenderFeedItem } from '@/lib/types';
 
 const VALID_SORTS = ['risk_score', 'expected_value', 'date_modified'];
@@ -145,9 +146,13 @@ export default function FeedPage({ searchParams }: FeedPageProps) {
       </div>
 
       {tenders.length === 0 ? (
-        <div className="bg-slate-800 rounded-lg border border-slate-700 p-12 text-center text-slate-500">
-          No flagged tenders match the current filters.
-        </div>
+        <EmptyState
+          icon="🔍"
+          title="No tenders match your filters"
+          description="Try adjusting your criteria or clearing all filters."
+          actionLabel="Clear All Filters"
+          actionHref="/feed"
+        />
       ) : (
         <div className="space-y-3">
           {tenders.map(tender => (

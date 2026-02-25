@@ -2,7 +2,18 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'prozorro.sqlite');
+function getDbPath(): string {
+  const primaryPath = path.join(process.cwd(), 'data', 'prozorro.sqlite');
+  const samplePath = path.join(process.cwd(), 'data', 'sample.sqlite');
+
+  if (fs.existsSync(primaryPath)) return primaryPath;
+  if (fs.existsSync(samplePath)) return samplePath;
+
+  // Neither exists — create new DB at primary path
+  return primaryPath;
+}
+
+const DB_PATH = getDbPath();
 
 // Ensure data directory exists
 const dataDir = path.dirname(DB_PATH);

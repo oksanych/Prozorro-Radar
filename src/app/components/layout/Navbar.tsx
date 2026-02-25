@@ -17,14 +17,14 @@ export default function Navbar() {
     <nav className="bg-slate-800 border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-slate-100 font-mono">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-lg font-bold text-slate-100 font-mono hover:text-blue-400 transition-colors">
               🔍 PROZORRO RADAR
             </span>
             <span className="text-xs text-slate-400 hidden sm:block">
               Tender Risk Signals
             </span>
-          </div>
+          </Link>
           <div className="flex items-center gap-1">
             {NAV_LINKS.map(({ href, label }) => {
               const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
