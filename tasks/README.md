@@ -26,7 +26,7 @@ claude "Read tasks/01-foundation.md and implement everything specified. Run npm 
 claude "Read tasks/02-ingestion.md. Task 01 is complete. Implement the ingestion pipeline. Run npm run ingest -- --limit 50 to test, then npm run ingest to pull the full dataset. Tell me the tender count when done."
 
 # Review: spot-check 5 tenders in DB vs Prozorro website
-# CRITICAL: if API is down or rate-limited, use the fixture strategy in the task
+# CRITICAL: if API is down or rate-limited, use the fixture strategy in the taskс
 
 # Task 3: Scoring Engine — 4 signals + tests + scoring pass (~3-4 hours)
 claude "Read tasks/03-scoring.md. Tasks 01-02 are complete. Implement the scoring engine in packages/scoring, write all unit tests, and run the scoring pass. Run npm test and npm run score before telling me you're done. Report the flag rate."

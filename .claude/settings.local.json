@@ -17,7 +17,9 @@
       "Bash(node:*)",
       "Bash(sleep 4:*)",
       "Bash(curl:*)",
-      "Bash(curl -s \"http://localhost:3001/api/filters\" | python3 -m json.tool 2>/dev/null && echo \"---\" && curl -s \"http://localhost:3001/api/signals/summary\" | python3 -m json.tool 2>/dev/null)"
+      "Bash(curl -s \"http://localhost:3001/api/filters\" | python3 -m json.tool 2>/dev/null && echo \"---\" && curl -s \"http://localhost:3001/api/signals/summary\" | python3 -m json.tool 2>/dev/null)",
+      "Bash(echo === Cases API ===:*)",
+      "Bash(echo === Tender detail page ===:*)"
     ]
   }
 }
