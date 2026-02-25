@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { formatDate } from '@/lib/formatters';
 import CaseItemRow from '@/app/components/cases/CaseItemRow';
 import CaseNotes from '@/app/components/cases/CaseNotes';
+import EmptyState from '@/app/components/shared/EmptyState';
 import type { CaseRow, CaseItemRow as CaseItemRowType, RiskLevel } from '@/lib/types';
 
 type CaseDetail = CaseRow & {
@@ -120,37 +121,42 @@ export default function CaseDetailPage() {
       {/* Notes */}
       <CaseNotes caseId={id} initialNotes={data.notes} />
 
+      {/* Empty state */}
+      {data.items.length === 0 && (
+        <EmptyState
+          icon="📁"
+          title="This case is empty"
+          description="Add tenders or entities from the Feed or Detail pages."
+        />
+      )}
+
       {/* Tenders */}
-      <div>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
-          Tenders ({tenderItems.length})
-        </h2>
-        {tenderItems.length === 0 ? (
-          <div className="text-sm text-slate-600 italic">No tenders added yet. Browse the Feed and click "+ Add to Case".</div>
-        ) : (
+      {tenderItems.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Tenders ({tenderItems.length})
+          </h2>
           <div className="bg-slate-800 border border-slate-700 rounded-lg px-4">
             {tenderItems.map(item => (
               <CaseItemRow key={`${item.item_type}-${item.ref_id}`} item={item} onRemove={removeItem} />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Entities */}
-      <div>
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
-          Entities ({entityItems.length})
-        </h2>
-        {entityItems.length === 0 ? (
-          <div className="text-sm text-slate-600 italic">No entities added yet. Visit an Entity Profile and click "+ Add to Case".</div>
-        ) : (
+      {entityItems.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+            Entities ({entityItems.length})
+          </h2>
           <div className="bg-slate-800 border border-slate-700 rounded-lg px-4">
             {entityItems.map(item => (
               <CaseItemRow key={`${item.item_type}-${item.ref_id}`} item={item} onRemove={removeItem} />
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Export */}
       <div className="pt-2">
