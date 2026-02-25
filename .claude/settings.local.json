@@ -14,7 +14,10 @@
       "Bash(wait && cat /private/tmp/claude-501/-Users-Oleksandr-Oksanych-Documents-Projects-Prozorro-Radar/tasks/b69b3f5.output 2>&1)",
       "Bash(tsx:*)",
       "Bash(node --loader tsx/esm scripts/score.ts 2>&1 || npx tsx scripts/score.ts 2>&1)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(sleep 4:*)",
+      "Bash(curl:*)",
+      "Bash(curl -s \"http://localhost:3001/api/filters\" | python3 -m json.tool 2>/dev/null && echo \"---\" && curl -s \"http://localhost:3001/api/signals/summary\" | python3 -m json.tool 2>/dev/null)"
     ]
   }
 }
