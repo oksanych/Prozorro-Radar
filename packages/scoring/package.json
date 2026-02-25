@@ -1,0 +1,10 @@
+{
+  "name": "@prozorro-radar/scoring",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

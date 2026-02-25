@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(echo EXIT: $?:*)",
+      "Bash(cp:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(head:*)",
+      "Bash(npx tsx:*)",
+      "Bash(sqlite3:*)"
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "ingestion": {
+    "LOOKBACK_DAYS": 90,
+    "TARGET_STATUSES": ["complete"],
+    "TARGET_METHODS": [
+      "belowThreshold",
+      "aboveThresholdUA",
+      "aboveThresholdEU",
+      "negotiation",
+      "negotiation.quick"
+    ],
+    "CONCURRENT_REQUESTS": 3,
+    "REQUEST_DELAY_MS": 500,
+    "BATCH_SIZE": 100
+  },
+  "signals": {
+    "S1_VALUE_THRESHOLD": 500000,
+    "S2_DEADLINE_THRESHOLDS": {
+      "belowThreshold": 7,
+      "aboveThresholdUA": 15,
+      "aboveThresholdEU": 30
+    },
+    "S3_NEGOTIATION_THRESHOLD": 200000,
+    "S3_NEGOTIATION_METHODS": ["negotiation", "negotiation.quick"],
+    "S4_REPEAT_WIN_COUNT": 3,
+    "S4_WINDOW_DAYS": 90,
+    "S4_MIN_TOTAL_VALUE": 1000000,
+    "S5_SIMILARITY_THRESHOLD": 0.6,
+    "S5_REPOST_WINDOW_DAYS": 60
+  },
+  "scoring": {
+    "MAX_SCORE": 100,
+    "WEIGHTS": {
+      "SINGLE_BIDDER": 35,
+      "TIGHT_DEADLINE": 20,
+      "NEGOTIATION_BYPASS": 25,
+      "BUYER_CONCENTRATION": 30,
+      "CANCELLED_REPOSTED": 20
+    },
+    "SEVERITY_BANDS": {
+      "LOW": [1, 24],
+      "MEDIUM": [25, 49],
+      "HIGH": [50, 79],
+      "CRITICAL": [80, 100]
+    }
+  }
+}
