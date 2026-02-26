@@ -112,7 +112,6 @@ CREATE INDEX IF NOT EXISTS idx_tenders_date ON tenders(date_modified);
 CREATE INDEX IF NOT EXISTS idx_signals_tender ON signals(tender_id);
 CREATE INDEX IF NOT EXISTS idx_signals_code ON signals(signal_code);
 CREATE INDEX IF NOT EXISTS idx_case_items_case ON case_items(case_id);
-CREATE INDEX IF NOT EXISTS idx_cases_user ON cases(user_email);
 `);
 
 // Migration: add user_email to cases if missing (existing DBs)
@@ -120,6 +119,7 @@ const caseCols = db.pragma('table_info(cases)') as { name: string }[];
 if (!caseCols.some(c => c.name === 'user_email')) {
   db.exec("ALTER TABLE cases ADD COLUMN user_email TEXT NOT NULL DEFAULT 'anonymous'");
 }
+db.exec('CREATE INDEX IF NOT EXISTS idx_cases_user ON cases(user_email)');
 
 export { db };
 export default db;
