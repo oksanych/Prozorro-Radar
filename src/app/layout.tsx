@@ -14,6 +14,8 @@ export const metadata: Metadata = {
   },
 };
 
+const authDisabled = process.env.AUTH_DISABLED === "true";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,8 +24,8 @@ export default function RootLayout({
   return (
     <html lang="uk" className="dark">
       <body className={`${inter.className} bg-slate-900 text-slate-100 antialiased min-h-screen`}>
-        <Providers>
-          <Navbar />
+        <Providers authDisabled={authDisabled}>
+          <Navbar authDisabled={authDisabled} />
           <main className="max-w-7xl mx-auto px-4 py-6">
             {children}
           </main>

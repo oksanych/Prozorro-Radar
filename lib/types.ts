@@ -53,6 +53,7 @@ export interface BuyerSupplierPairRow {
 
 export interface CaseRow {
   id: string;
+  user_email: string;
   title: string;
   notes: string;
   created_at: string;

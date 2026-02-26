@@ -1,0 +1,399 @@
+commit 4279bd4bf7a59642bf7d01675b164b4d784e1812
+Author: Oleh Ziniak <oleh.ziniak@gmail.com>
+Date:   Thu Feb 26 16:25:42 2026 +0200
+
+    fix auth
+
+diff --git a/.claude/settings.local.json b/.claude/settings.local.json
+index da585ee..9a0de02 100644
+--- a/.claude/settings.local.json
++++ b/.claude/settings.local.json
+@@ -33,7 +33,8 @@
+       "Bash(openssl rand:*)",
+       "Bash(git commit:*)",
+       "Bash(git push:*)",
+-      "WebFetch(domain:prozorro-radar-production.up.railway.app)"
++      "WebFetch(domain:prozorro-radar-production.up.railway.app)",
++      "Bash(ls:*)"
+     ]
+   }
+ }
+diff --git a/lib/auth-helpers.ts b/lib/auth-helpers.ts
+new file mode 100644
+index 0000000..52d9317
+--- /dev/null
++++ b/lib/auth-helpers.ts
+@@ -0,0 +1,7 @@
++import { auth } from "@/auth"
++
++export async function getUserEmail(): Promise<string | null> {
++  if (process.env.AUTH_DISABLED === "true") return null
++  const session = await auth()
++  return session?.user?.email ?? null
++}
+diff --git a/lib/db.ts b/lib/db.ts
+index 9292747..5aeb3fe 100644
+--- a/lib/db.ts
++++ b/lib/db.ts
+@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS buyer_supplier_pairs (
+ 
+ CREATE TABLE IF NOT EXISTS cases (
+   id TEXT PRIMARY KEY,
++  user_email TEXT NOT NULL DEFAULT 'anonymous',
+   title TEXT NOT NULL,
+   notes TEXT DEFAULT '',
+   created_at TEXT DEFAULT (datetime('now')),
+@@ -111,7 +112,14 @@ CREATE INDEX IF NOT EXISTS idx_tenders_date ON tenders(date_modified);
+ CREATE INDEX IF NOT EXISTS idx_signals_tender ON signals(tender_id);
+ CREATE INDEX IF NOT EXISTS idx_signals_code ON signals(signal_code);
+ CREATE INDEX IF NOT EXISTS idx_case_items_case ON case_items(case_id);
++CREATE INDEX IF NOT EXISTS idx_cases_user ON cases(user_email);
+ `);
+ 
++// Migration: add user_email to cases if missing (existing DBs)
++const caseCols = db.pragma('table_info(cases)') as { name: string }[];
++if (!caseCols.some(c => c.name === 'user_email')) {
++  db.exec("ALTER TABLE cases ADD COLUMN user_email TEXT NOT NULL DEFAULT 'anonymous'");
++}
++
+ export { db };
+ export default db;
+diff --git a/lib/types.ts b/lib/types.ts
+index 568f2d2..bda3cb4 100644
+--- a/lib/types.ts
++++ b/lib/types.ts
+@@ -53,6 +53,7 @@ export interface BuyerSupplierPairRow {
+ 
+ export interface CaseRow {
+   id: string;
++  user_email: string;
+   title: string;
+   notes: string;
+   created_at: string;
+diff --git a/src/app/api/cases/[id]/export/route.ts b/src/app/api/cases/[id]/export/route.ts
+index 24d9af7..7da2d53 100644
+--- a/src/app/api/cases/[id]/export/route.ts
++++ b/src/app/api/cases/[id]/export/route.ts
+@@ -1,5 +1,6 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import db from '@/lib/db';
++import { getUserEmail } from '@/lib/auth-helpers';
+ import type { CaseRow, CaseItemRow, TenderRow, SignalRow, CaseExport, CaseExportItem } from '@/lib/types';
+ 
+ export const dynamic = 'force-dynamic';
+@@ -9,8 +10,12 @@ export async function GET(
+   { params }: { params: { id: string } }
+ ) {
+   const { id } = params;
++  const email = await getUserEmail();
++
++  const caseRow = email
++    ? db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined
++    : db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+ 
+-  const caseRow = db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+   if (!caseRow) {
+     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+   }
+diff --git a/src/app/api/cases/[id]/items/route.ts b/src/app/api/cases/[id]/items/route.ts
+index 00169b3..ebd763e 100644
+--- a/src/app/api/cases/[id]/items/route.ts
++++ b/src/app/api/cases/[id]/items/route.ts
+@@ -1,15 +1,25 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import db from '@/lib/db';
++import { getUserEmail } from '@/lib/auth-helpers';
++import type { CaseRow } from '@/lib/types';
+ 
+ export const dynamic = 'force-dynamic';
+ 
++function findCase(id: string, email: string | null): CaseRow | undefined {
++  if (email) {
++    return db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined;
++  }
++  return db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
++}
++
+ export async function POST(
+   req: NextRequest,
+   { params }: { params: { id: string } }
+ ) {
+   const caseId = params.id;
++  const email = await getUserEmail();
+ 
+-  const caseRow = db.prepare('SELECT id FROM cases WHERE id = ?').get(caseId);
++  const caseRow = findCase(caseId, email);
+   if (!caseRow) {
+     return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+   }
+@@ -40,6 +50,12 @@ export async function DELETE(
+   { params }: { params: { id: string } }
+ ) {
+   const caseId = params.id;
++  const email = await getUserEmail();
++
++  const caseRow = findCase(caseId, email);
++  if (!caseRow) {
++    return NextResponse.json({ error: 'Case not found' }, { status: 404 });
++  }
+ 
+   const body = await req.json();
+   const { item_type, ref_id } = body as { item_type: string; ref_id: string };
+diff --git a/src/app/api/cases/[id]/route.ts b/src/app/api/cases/[id]/route.ts
+index aba6beb..06a2b96 100644
+--- a/src/app/api/cases/[id]/route.ts
++++ b/src/app/api/cases/[id]/route.ts
+@@ -1,16 +1,25 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import db from '@/lib/db';
++import { getUserEmail } from '@/lib/auth-helpers';
+ import type { CaseRow, CaseItemRow, TenderRow } from '@/lib/types';
+ 
+ export const dynamic = 'force-dynamic';
+ 
++function findCase(id: string, email: string | null): CaseRow | undefined {
++  if (email) {
++    return db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined;
++  }
++  return db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
++}
++
+ export async function GET(
+   _req: NextRequest,
+   { params }: { params: { id: string } }
+ ) {
+   const { id } = params;
++  const email = await getUserEmail();
+ 
+-  const caseRow = db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
++  const caseRow = findCase(id, email);
+   if (!caseRow) {
+     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+   }
+@@ -36,8 +45,9 @@ export async function PATCH(
+   { params }: { params: { id: string } }
+ ) {
+   const { id } = params;
++  const email = await getUserEmail();
+ 
+-  const caseRow = db.prepare('SELECT id FROM cases WHERE id = ?').get(id);
++  const caseRow = findCase(id, email);
+   if (!caseRow) {
+     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+   }
+@@ -62,6 +72,13 @@ export async function DELETE(
+   { params }: { params: { id: string } }
+ ) {
+   const { id } = params;
++  const email = await getUserEmail();
++
++  const caseRow = findCase(id, email);
++  if (!caseRow) {
++    return NextResponse.json({ error: 'Not found' }, { status: 404 });
++  }
++
+   db.prepare('DELETE FROM case_items WHERE case_id = ?').run(id);
+   db.prepare('DELETE FROM cases WHERE id = ?').run(id);
+   return NextResponse.json({ success: true });
+diff --git a/src/app/api/cases/route.ts b/src/app/api/cases/route.ts
+index d40c41f..7d9b537 100644
+--- a/src/app/api/cases/route.ts
++++ b/src/app/api/cases/route.ts
+@@ -1,23 +1,38 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import db from '@/lib/db';
++import { getUserEmail } from '@/lib/auth-helpers';
+ import type { CaseRow } from '@/lib/types';
+ 
+ export const dynamic = 'force-dynamic';
+ 
+ export async function GET() {
+-  const cases = db.prepare(`
+-    SELECT c.*,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
+-    FROM cases c
+-    ORDER BY c.updated_at DESC
+-  `).all() as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[];
++  const email = await getUserEmail();
++
++  const query = email
++    ? `SELECT c.*,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
++      FROM cases c
++      WHERE c.user_email = ?
++      ORDER BY c.updated_at DESC`
++    : `SELECT c.*,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
++        (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
++      FROM cases c
++      ORDER BY c.updated_at DESC`;
++
++  const cases = email
++    ? db.prepare(query).all(email) as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[]
++    : db.prepare(query).all() as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[];
+ 
+   return NextResponse.json(cases);
+ }
+ 
+ export async function POST(req: NextRequest) {
++  const email = await getUserEmail();
++
+   const body = await req.json();
+   const { title, notes } = body as { title: string; notes?: string };
+ 
+@@ -26,7 +41,10 @@ export async function POST(req: NextRequest) {
+   }
+ 
+   const id = crypto.randomUUID();
+-  db.prepare('INSERT INTO cases (id, title, notes) VALUES (?, ?, ?)').run(id, title.trim(), notes || '');
++  const userEmail = email ?? 'anonymous';
++
++  db.prepare('INSERT INTO cases (id, user_email, title, notes) VALUES (?, ?, ?, ?)')
++    .run(id, userEmail, title.trim(), notes || '');
+ 
+   const created = db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow;
+   return NextResponse.json(created, { status: 201 });
+diff --git a/src/app/cases/page.tsx b/src/app/cases/page.tsx
+index f0a7df6..a596ace 100644
+--- a/src/app/cases/page.tsx
++++ b/src/app/cases/page.tsx
+@@ -1,4 +1,5 @@
+ import db from '@/lib/db';
++import { getUserEmail } from '@/lib/auth-helpers';
+ import NewCaseDialog from '@/app/components/cases/NewCaseDialog';
+ import CaseCard from '@/app/components/cases/CaseCard';
+ import EmptyState from '@/app/components/shared/EmptyState';
+@@ -6,15 +7,27 @@ import type { CaseRow } from '@/lib/types';
+ 
+ export const dynamic = 'force-dynamic';
+ 
+-export default function CasesPage() {
+-  const cases = db.prepare(`
+-    SELECT c.*,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
+-      (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
+-    FROM cases c
+-    ORDER BY c.updated_at DESC
+-  `).all() as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[];
++export default async function CasesPage() {
++  const email = await getUserEmail();
++
++  const cases = email
++    ? db.prepare(`
++        SELECT c.*,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
++        FROM cases c
++        WHERE c.user_email = ?
++        ORDER BY c.updated_at DESC
++      `).all(email) as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[]
++    : db.prepare(`
++        SELECT c.*,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id) as item_count,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'tender') as tender_count,
++          (SELECT COUNT(*) FROM case_items WHERE case_id = c.id AND item_type = 'entity') as entity_count
++        FROM cases c
++        ORDER BY c.updated_at DESC
++      `).all() as (CaseRow & { item_count: number; tender_count: number; entity_count: number })[];
+ 
+   return (
+     <div className="space-y-5">
+diff --git a/src/app/components/Providers.tsx b/src/app/components/Providers.tsx
+index db649c3..e68c321 100644
+--- a/src/app/components/Providers.tsx
++++ b/src/app/components/Providers.tsx
+@@ -2,6 +2,7 @@
+ 
+ import { SessionProvider } from 'next-auth/react';
+ 
+-export default function Providers({ children }: { children: React.ReactNode }) {
++export default function Providers({ children, authDisabled }: { children: React.ReactNode; authDisabled: boolean }) {
++  if (authDisabled) return <>{children}</>;
+   return <SessionProvider>{children}</SessionProvider>;
+ }
+diff --git a/src/app/components/layout/Navbar.tsx b/src/app/components/layout/Navbar.tsx
+index f464075..3db945f 100644
+--- a/src/app/components/layout/Navbar.tsx
++++ b/src/app/components/layout/Navbar.tsx
+@@ -11,7 +11,7 @@ const NAV_LINKS = [
+   { href: '/about', label: 'About' },
+ ];
+ 
+-export default function Navbar() {
++export default function Navbar({ authDisabled }: { authDisabled: boolean }) {
+   const pathname = usePathname();
+ 
+   if (pathname === '/login') return null;
+@@ -22,7 +22,7 @@ export default function Navbar() {
+         <div className="flex items-center justify-between h-14 sm:h-16">
+           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+             <span className="text-base sm:text-lg font-bold text-slate-100 font-mono hover:text-blue-400 transition-colors">
+-              RADAR
++              👀 RADAR
+             </span>
+             <span className="text-xs text-slate-400 hidden md:block">
+               Tender Risk Signals
+@@ -45,12 +45,14 @@ export default function Navbar() {
+                 </Link>
+               );
+             })}
+-            <button
+-              onClick={() => signOut({ callbackUrl: '/login' })}
+-              className="ml-2 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+-            >
+-              Sign Out
+-            </button>
++            {!authDisabled && (
++              <button
++                onClick={() => signOut({ callbackUrl: '/login' })}
++                className="ml-2 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
++              >
++                Sign Out
++              </button>
++            )}
+           </div>
+         </div>
+       </div>
+diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index 44b6dba..0f74574 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -14,6 +14,8 @@ export const metadata: Metadata = {
+   },
+ };
+ 
++const authDisabled = process.env.AUTH_DISABLED === "true";
++
+ export default function RootLayout({
+   children,
+ }: Readonly<{
+@@ -22,8 +24,8 @@ export default function RootLayout({
+   return (
+     <html lang="uk" className="dark">
+       <body className={`${inter.className} bg-slate-900 text-slate-100 antialiased min-h-screen`}>
+-        <Providers>
+-          <Navbar />
++        <Providers authDisabled={authDisabled}>
++          <Navbar authDisabled={authDisabled} />
+           <main className="max-w-7xl mx-auto px-4 py-6">
+             {children}
+           </main>
+diff --git a/src/auth.ts b/src/auth.ts
+index 47c6879..ca4e573 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -6,6 +6,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
+   secret: process.env.AUTH_SECRET,
+   session: { strategy: "jwt" },
+   pages: { signIn: "/login" },
++  trustHost: true,
+   callbacks: {
+     authorized: async ({ auth }) => {
+       if (process.env.AUTH_DISABLED === "true") return true

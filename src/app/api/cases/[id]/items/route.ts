@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserEmail } from '@/lib/auth-helpers';
+import type { CaseRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+
+function findCase(id: string, email: string | null): CaseRow | undefined {
+  if (email) {
+    return db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined;
+  }
+  return db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+}
 
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const caseId = params.id;
+  const email = await getUserEmail();
 
-  const caseRow = db.prepare('SELECT id FROM cases WHERE id = ?').get(caseId);
+  const caseRow = findCase(caseId, email);
   if (!caseRow) {
     return NextResponse.json({ error: 'Case not found' }, { status: 404 });
   }
@@ -40,6 +50,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const caseId = params.id;
+  const email = await getUserEmail();
+
+  const caseRow = findCase(caseId, email);
+  if (!caseRow) {
+    return NextResponse.json({ error: 'Case not found' }, { status: 404 });
+  }
 
   const body = await req.json();
   const { item_type, ref_id } = body as { item_type: string; ref_id: string };

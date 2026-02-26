@@ -6,6 +6,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  trustHost: true,
   callbacks: {
     authorized: async ({ auth }) => {
       if (process.env.AUTH_DISABLED === "true") return true

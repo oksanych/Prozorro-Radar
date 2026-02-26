@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserEmail } from '@/lib/auth-helpers';
 import type { CaseRow, CaseItemRow, TenderRow, SignalRow, CaseExport, CaseExportItem } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -9,8 +10,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+  const email = await getUserEmail();
 
-  const caseRow = db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+  const caseRow = email
+    ? db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined
+    : db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+
   if (!caseRow) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

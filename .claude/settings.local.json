@@ -33,7 +33,8 @@
       "Bash(openssl rand:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "WebFetch(domain:prozorro-radar-production.up.railway.app)"
+      "WebFetch(domain:prozorro-radar-production.up.railway.app)",
+      "Bash(ls:*)"
     ]
   }
 }

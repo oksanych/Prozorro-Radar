@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getUserEmail } from '@/lib/auth-helpers';
 import type { CaseRow, CaseItemRow, TenderRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+
+function findCase(id: string, email: string | null): CaseRow | undefined {
+  if (email) {
+    return db.prepare('SELECT * FROM cases WHERE id = ? AND user_email = ?').get(id, email) as CaseRow | undefined;
+  }
+  return db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+}
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+  const email = await getUserEmail();
 
-  const caseRow = db.prepare('SELECT * FROM cases WHERE id = ?').get(id) as CaseRow | undefined;
+  const caseRow = findCase(id, email);
   if (!caseRow) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -36,8 +45,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+  const email = await getUserEmail();
 
-  const caseRow = db.prepare('SELECT id FROM cases WHERE id = ?').get(id);
+  const caseRow = findCase(id, email);
   if (!caseRow) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -62,6 +72,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
+  const email = await getUserEmail();
+
+  const caseRow = findCase(id, email);
+  if (!caseRow) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   db.prepare('DELETE FROM case_items WHERE case_id = ?').run(id);
   db.prepare('DELETE FROM cases WHERE id = ?').run(id);
   return NextResponse.json({ success: true });
