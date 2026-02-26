@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p ${PORT:-3000}",
+    "postinstall": "npm rebuild better-sqlite3",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -14,6 +15,9 @@
     "seed": "tsx scripts/seed.ts",
     "stats": "tsx scripts/stats.ts",
     "verify": "tsx scripts/verify.ts"
+  },
+  "engines": {
+    "node": "20.x"
   },
   "dependencies": {
     "react": "^18",
