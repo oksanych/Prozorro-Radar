@@ -1,7 +1,6 @@
-import { auth } from "@/auth"
+import { headers } from "next/headers"
 
 export async function getUserEmail(): Promise<string | null> {
   if (process.env.AUTH_DISABLED === "true") return null
-  const session = await auth()
-  return session?.user?.email ?? null
+  return headers().get("x-user-email")
 }
