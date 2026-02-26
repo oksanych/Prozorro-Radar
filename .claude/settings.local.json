@@ -25,7 +25,15 @@
       "Bash(./node_modules/.bin/esbuild scripts/score.ts --bundle --platform=node --outfile=/tmp/score-bundled.js --external:better-sqlite3 2>&1 && node /tmp/score-bundled.js 2>&1)",
       "Bash(./node_modules/.bin/esbuild scripts/score.ts --bundle --platform=node --outfile=/tmp/score-bundled.js --external:better-sqlite3 2>&1 && NODE_PATH=/Users/Oleksandr.Oksanych/Documents/Projects/Prozorro-Radar/node_modules node /tmp/score-bundled.js 2>&1)",
       "Bash(git apply:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__ide__getDiagnostics",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(npx auth:*)",
+      "Bash(openssl rand:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:prozorro-radar-production.up.railway.app)"
     ]
   }
 }

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 
 const NAV_LINKS = [
   { href: '/', label: 'Dashboard' },
@@ -13,13 +14,15 @@ const NAV_LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
 
+  if (pathname === '/login') return null;
+
   return (
     <nav className="bg-slate-800 border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <span className="text-base sm:text-lg font-bold text-slate-100 font-mono hover:text-blue-400 transition-colors">
-              🔍 RADAR
+              RADAR
             </span>
             <span className="text-xs text-slate-400 hidden md:block">
               Tender Risk Signals
@@ -42,6 +45,12 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="ml-2 px-2 py-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
       </div>
