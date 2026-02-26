@@ -57,7 +57,7 @@ export default function AboutPage() {
     : 'unknown';
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-100">About Prozorro Radar</h1>
         <p className="text-slate-400 text-sm mt-1">Methodology, data sources, and transparency notes</p>

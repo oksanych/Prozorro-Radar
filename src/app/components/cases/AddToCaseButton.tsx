@@ -7,9 +7,10 @@ interface AddToCaseButtonProps {
   itemType: 'tender' | 'entity';
   refId: string;
   refLabel: string;
+  variant?: 'default' | 'inline';
 }
 
-export default function AddToCaseButton({ itemType, refId, refLabel }: AddToCaseButtonProps) {
+export default function AddToCaseButton({ itemType, refId, refLabel, variant = 'default' }: AddToCaseButtonProps) {
   const [open, setOpen] = useState(false);
   const [cases, setCases] = useState<(CaseRow & { item_count: number })[]>([]);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'creating'>('idle');
@@ -80,7 +81,10 @@ export default function AddToCaseButton({ itemType, refId, refLabel }: AddToCase
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="text-sm px-3 py-1.5 rounded border border-slate-600 text-slate-300 hover:border-blue-500 hover:text-blue-400 transition-colors"
+        className={variant === 'inline'
+          ? 'text-xs text-slate-400 hover:text-blue-400 transition-colors'
+          : 'text-sm px-3 py-1.5 rounded border border-slate-600 text-slate-300 hover:border-blue-500 hover:text-blue-400 transition-colors'
+        }
       >
         + Add to Case
       </button>

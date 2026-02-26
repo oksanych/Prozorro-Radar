@@ -19,7 +19,13 @@
       "Bash(curl:*)",
       "Bash(curl -s \"http://localhost:3001/api/filters\" | python3 -m json.tool 2>/dev/null && echo \"---\" && curl -s \"http://localhost:3001/api/signals/summary\" | python3 -m json.tool 2>/dev/null)",
       "Bash(echo === Cases API ===:*)",
-      "Bash(echo === Tender detail page ===:*)"
+      "Bash(echo === Tender detail page ===:*)",
+      "Bash(grep:*)",
+      "Bash(timeout 10 npx tsx:*)",
+      "Bash(./node_modules/.bin/esbuild scripts/score.ts --bundle --platform=node --outfile=/tmp/score-bundled.js --external:better-sqlite3 2>&1 && node /tmp/score-bundled.js 2>&1)",
+      "Bash(./node_modules/.bin/esbuild scripts/score.ts --bundle --platform=node --outfile=/tmp/score-bundled.js --external:better-sqlite3 2>&1 && NODE_PATH=/Users/Oleksandr.Oksanych/Documents/Projects/Prozorro-Radar/node_modules node /tmp/score-bundled.js 2>&1)",
+      "Bash(git apply:*)",
+      "Bash(git add:*)"
     ]
   }
 }

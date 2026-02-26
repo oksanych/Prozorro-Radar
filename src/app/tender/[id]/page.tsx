@@ -67,18 +67,14 @@ export default function TenderDetailPage({ params }: { params: { id: string } })
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <TenderHeader
-          id={id}
-          title={detail.title}
-          riskLevel={detail.risk_level}
-          riskScore={detail.risk_score}
-          prozorroUrl={detail.prozorro_url}
-        />
-        <div className="flex-shrink-0 mt-6">
-          <AddToCaseButton itemType="tender" refId={id} refLabel={refLabel} />
-        </div>
-      </div>
+      <TenderHeader
+        id={id}
+        title={detail.title}
+        riskLevel={detail.risk_level}
+        riskScore={detail.risk_score}
+        prozorroUrl={detail.prozorro_url}
+      />
+      <AddToCaseButton itemType="tender" refId={id} refLabel={refLabel} />
 
       <KeyFacts tender={detail} />
 

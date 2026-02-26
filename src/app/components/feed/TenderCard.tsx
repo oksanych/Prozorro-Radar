@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { formatUAHShort, formatDate, riskBadgeClass } from '@/lib/formatters';
 import RiskBadge from '@/app/components/shared/RiskBadge';
+import AddToCaseButton from '@/app/components/cases/AddToCaseButton';
 import type { TenderFeedItem } from '@/lib/types';
 
 interface TenderCardProps {
@@ -39,9 +40,9 @@ export default function TenderCard({ tender }: TenderCardProps) {
       </div>
 
       {/* Title */}
-      <div className="text-sm text-slate-100 font-medium leading-snug line-clamp-2">
+      <Link href={`/tender/${tender.id}`} className="text-sm text-slate-100 font-medium leading-snug line-clamp-2 hover:text-blue-400 transition-colors block">
         {tender.title}
-      </div>
+      </Link>
 
       {/* Value row */}
       <div className="flex items-center gap-3 text-sm">
@@ -59,23 +60,23 @@ export default function TenderCard({ tender }: TenderCardProps) {
       {/* Buyer/winner */}
       <div className="text-xs text-slate-400 space-y-0.5">
         {tender.buyer_name && (
-          <div className="flex items-center gap-1">
-            <span className="text-slate-600">Buyer:</span>
+          <div className="truncate">
+            <span className="text-slate-600">Buyer: </span>
             <Link
               href={`/entity/${tender.buyer_edrpou}`}
-              className="hover:text-blue-400 truncate max-w-[300px]"
+              className="hover:text-blue-400"
             >
               {tender.buyer_name}
             </Link>
-            {tender.buyer_region && <span className="text-slate-600">· {tender.buyer_region}</span>}
+            {tender.buyer_region && <span className="text-slate-600"> · {tender.buyer_region}</span>}
           </div>
         )}
         {tender.winner_name && (
-          <div className="flex items-center gap-1">
-            <span className="text-slate-600">Winner:</span>
+          <div className="truncate">
+            <span className="text-slate-600">Winner: </span>
             <Link
               href={`/entity/${tender.winner_edrpou}`}
-              className="hover:text-blue-400 truncate max-w-[300px]"
+              className="hover:text-blue-400"
             >
               {tender.winner_name}
             </Link>
@@ -106,20 +107,19 @@ export default function TenderCard({ tender }: TenderCardProps) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-3 pt-1 border-t border-slate-700">
+      <div className="flex items-center justify-between pt-1 border-t border-slate-700">
         <Link
           href={`/tender/${tender.id}`}
           className="text-xs text-blue-400 hover:text-blue-300"
         >
           View Detail →
         </Link>
-        <button
-          disabled
-          className="text-xs text-slate-600 cursor-not-allowed"
-          title="Coming in Task 05"
-        >
-          + Add to Case
-        </button>
+        <AddToCaseButton
+          itemType="tender"
+          refId={tender.id}
+          refLabel={tender.title.slice(0, 80)}
+          variant="inline"
+        />
       </div>
     </div>
   );

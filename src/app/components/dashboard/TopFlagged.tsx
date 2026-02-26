@@ -19,27 +19,19 @@ export default function TopFlagged({ tenders }: TopFlaggedProps) {
   return (
     <div className="bg-slate-800 rounded-lg border border-slate-700 divide-y divide-slate-700">
       {tenders.map(tender => (
-        <div key={tender.id} className="p-4 flex items-start gap-4">
-          <div className="flex-shrink-0 pt-0.5">
+        <Link key={tender.id} href={`/tender/${tender.id}`} className="block p-4 hover:bg-slate-700/50 transition-colors">
+          <div className="flex items-center gap-2 mb-1">
             <RiskBadge level={tender.risk_level} score={tender.risk_score} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm text-slate-100 line-clamp-1 font-medium">
+            <span className="text-sm text-slate-100 font-medium truncate">
               {tender.title}
-            </div>
-            <div className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-300">{formatUAHShort(tender.expected_value)}</span>
-              {tender.buyer_name && <span className="truncate max-w-[200px]">{tender.buyer_name}</span>}
-              {tender.date_modified && <span>{formatDate(tender.date_modified)}</span>}
-            </div>
+            </span>
           </div>
-          <Link
-            href={`/tender/${tender.id}`}
-            className="flex-shrink-0 text-xs text-blue-400 hover:text-blue-300 whitespace-nowrap"
-          >
-            View →
-          </Link>
-        </div>
+          <div className="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-slate-300">{formatUAHShort(tender.expected_value)}</span>
+            {tender.buyer_name && <span className="truncate">{tender.buyer_name}</span>}
+            {tender.date_modified && <span>{formatDate(tender.date_modified)}</span>}
+          </div>
+        </Link>
       ))}
     </div>
   );
