@@ -160,6 +160,13 @@ export interface CounterpartyRow {
   flagged_count: number;
 }
 
+export interface WeekBucket {
+  week_key: string;   // "2026-05"
+  week_start: string; // "2026-01-27" — first date in that bucket
+  total: number;
+  flagged: number;
+}
+
 export interface DashboardStats {
   total_tenders: number;
   flagged_count: number;

@@ -3,7 +3,8 @@ import db from '@/lib/db';
 import Disclaimer from './components/layout/Disclaimer';
 import StatCards from './components/dashboard/StatCards';
 import TopFlagged from './components/dashboard/TopFlagged';
-import type { TenderRow, SignalRow, TenderFeedItem, DashboardStats, RiskLevel, SignalCode } from '@/lib/types';
+import WeeklyTrends from './components/dashboard/WeeklyTrends';
+import type { TenderRow, SignalRow, TenderFeedItem, DashboardStats, WeekBucket, RiskLevel, SignalCode } from '@/lib/types';
 
 function getDashboardStats(): DashboardStats {
   const totalsRow = db.prepare(
@@ -53,6 +54,21 @@ function getDashboardStats(): DashboardStats {
   };
 }
 
+function getWeeklyTrends(): WeekBucket[] {
+  return db.prepare(`
+    SELECT
+      strftime('%Y-%W', date_completed) as week_key,
+      MIN(date(date_completed)) as week_start,
+      COUNT(*) as total,
+      SUM(CASE WHEN risk_score > 0 THEN 1 ELSE 0 END) as flagged
+    FROM tenders
+    WHERE date_completed >= date('now', '-90 days')
+      AND date_completed IS NOT NULL
+    GROUP BY week_key
+    ORDER BY week_key ASC
+  `).all() as WeekBucket[];
+}
+
 function getTopFlagged(): TenderFeedItem[] {
   const rows = db.prepare(
     'SELECT * FROM tenders WHERE risk_score > 0 ORDER BY risk_score DESC LIMIT 5'
@@ -97,6 +113,7 @@ function getTopFlagged(): TenderFeedItem[] {
 export default function DashboardPage() {
   const stats = getDashboardStats();
   const topTenders = getTopFlagged();
+  const weeklyTrends = getWeeklyTrends();
 
   return (
     <div className="space-y-6">
@@ -110,6 +127,11 @@ export default function DashboardPage() {
       </div>
 
       <StatCards stats={stats} />
+
+      <div>
+        <h2 className="text-lg font-semibold text-slate-200 mb-3">Flagged Tenders — Last 90 Days</h2>
+        <WeeklyTrends data={weeklyTrends} />
+      </div>
 
       <div>
         <h2 className="text-lg font-semibold text-slate-200 mb-3">Highest-Risk Tenders</h2>
