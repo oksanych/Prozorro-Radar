@@ -26,6 +26,15 @@ const db = new Database(DB_PATH);
 // Enable WAL mode for concurrent reads
 db.pragma('journal_mode = WAL');
 
+type TableColumn = {
+  name: string;
+};
+
+function hasColumn(tableName: string, columnName: string): boolean {
+  const columns = db.pragma(`table_info(${tableName})`) as TableColumn[];
+  return columns.some(column => column.name === columnName);
+}
+
 // Initialize schema
 db.exec(`
 CREATE TABLE IF NOT EXISTS tenders (
@@ -115,10 +124,13 @@ CREATE INDEX IF NOT EXISTS idx_case_items_case ON case_items(case_id);
 `);
 
 // Migration: add user_email to cases if missing (existing DBs)
-try {
-  db.exec("ALTER TABLE cases ADD COLUMN user_email TEXT NOT NULL DEFAULT 'anonymous'");
-} catch {
-  // Column already exists — safe to ignore
+if (!hasColumn('cases', 'user_email')) {
+  try {
+    db.exec("ALTER TABLE cases ADD COLUMN user_email TEXT NOT NULL DEFAULT 'anonymous'");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes('duplicate column name')) throw error;
+  }
 }
 db.exec('CREATE INDEX IF NOT EXISTS idx_cases_user ON cases(user_email)');
 

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "./components/layout/Navbar";
 import Providers from "./components/Providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Prozorro Radar — Tender Risk Signals",
@@ -23,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk" className="dark">
-      <body className={`${inter.className} bg-slate-900 text-slate-100 antialiased min-h-screen`}>
+      <body className={`${geistSans.className} bg-slate-900 text-slate-100 antialiased min-h-screen`}>
         <Providers authDisabled={authDisabled}>
           <Navbar authDisabled={authDisabled} />
           <main className="max-w-7xl mx-auto px-4 py-6">
