@@ -16,7 +16,7 @@
     "verify": "tsx scripts/verify.ts"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=20.19.0 <21"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",
