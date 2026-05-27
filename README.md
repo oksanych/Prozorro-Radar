@@ -45,7 +45,7 @@ Save tenders and entities to named investigation files. Add per-item notes. Expo
 Google OAuth via NextAuth v5 with per-user case isolation. Each investigator's saved cases are private. Locally the app runs without auth (`AUTH_DISABLED=true`).
 
 ### Offline-First Demo Mode
-The app ships with a bundled `data/sample.sqlite` (5,700+ scored tenders). It runs 100% offline — no network calls at runtime. Demo works even without internet.
+The app ships with a bundled `data/sample.sqlite` (6,300+ scored tenders). It runs 100% offline — no network calls at runtime. Demo works even without internet.
 
 ---
 
@@ -150,6 +150,36 @@ npm run stats     # Print distribution
 # Or all at once:
 npm run seed
 ```
+
+`lib/db.ts` opens `data/prozorro.sqlite` when it exists; otherwise it falls back to
+the bundled `data/sample.sqlite`. In the checked-in demo/production setup there is
+no `data/prozorro.sqlite`, so the refresh commands update `data/sample.sqlite`
+directly. Commit that file after a refresh.
+
+If ingestion leaves `data/.checkpoint`, finish the scan with:
+
+```bash
+npm run ingest -- --resume
+npm run score
+npm run stats
+```
+
+`data/.checkpoint` is temporary resume state and should not be committed.
+
+### Deploy to Railway
+
+```bash
+npm run build
+git add data/sample.sqlite
+git commit -m "Update bundled Prozorro dataset"
+git push origin master
+npx @railway/cli up --detach
+npx @railway/cli status
+```
+
+This Railway project is linked locally. A GitHub push keeps the repository current,
+but production is deployed with `railway up`; verify the Railway dashboard shows the
+new deployment as active and the app shows the updated tender count.
 
 ### Run Tests
 

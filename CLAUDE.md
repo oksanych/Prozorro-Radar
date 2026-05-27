@@ -14,6 +14,7 @@ npm run ingest       # Pull tenders from Prozorro API → SQLite
 npm run score        # Run scoring engine over all tenders
 npm run stats        # Print scoring distribution
 npm run seed         # ingest → score → stats in sequence
+npx @railway/cli up --detach  # Deploy current checkout to linked Railway production
 ```
 
 ## Architecture
@@ -24,7 +25,7 @@ Prozorro API → scripts/ingest.ts → SQLite ← packages/scoring/
                               Next.js Route Handlers → React Pages
 ```
 
-- **Ingestion scripts** run standalone via `tsx`. They write to `data/prozorro.sqlite`.
+- **Ingestion scripts** run standalone via `tsx`. They use `lib/db.ts`, so they write to `data/prozorro.sqlite` when it exists; otherwise they update the bundled `data/sample.sqlite`.
 - **Scoring engine** lives in `packages/scoring/` — pure functions, zero dependencies, unit tested.
 - **Route handlers** read SQLite synchronously via `better-sqlite3`. Cases CRUD also writes.
 - **React pages** are server components by default. Use `'use client'` only when needed (filters, forms, clipboard).
@@ -32,7 +33,7 @@ Prozorro API → scripts/ingest.ts → SQLite ← packages/scoring/
 ## Key Files
 
 - `config.json` — all signal thresholds. Never hardcode thresholds in code.
-- `lib/db.ts` — singleton SQLite connection. Import `db` from here everywhere.
+- `lib/db.ts` — singleton SQLite connection. It prefers `data/prozorro.sqlite` and falls back to `data/sample.sqlite`. Import `db` from here everywhere.
 - `lib/types.ts` — shared TypeScript interfaces for DB rows, API responses, components.
 - `lib/formatters.ts` — currency, date, risk color utilities.
 
@@ -84,6 +85,9 @@ npm test -- singleBidder    # single file
 - Feed filters sync to URL query params. Always read initial state from `useSearchParams()`.
 - The app must work offline from `data/sample.sqlite` — never require network at runtime.
 - Expect to fetch 10,000-15,000 details to get ~5,000 competitive tenders. Budget 30-60 min for ingestion.
+- If `data/prozorro.sqlite` is absent, `npm run seed` refreshes the committed `data/sample.sqlite` in place. Commit `data/sample.sqlite`; do not commit `data/.checkpoint`, `*.sqlite-wal`, or `*.sqlite-shm`.
+- If ingestion leaves `data/.checkpoint`, run `npm run ingest -- --resume`, then `npm run score` and `npm run stats`.
+- Railway production is linked locally, but GitHub push alone may not activate a deploy. After pushing, run `npx @railway/cli up --detach` and confirm `npx @railway/cli status` shows the new deployment active.
 
 ## Language & Ethics
 
